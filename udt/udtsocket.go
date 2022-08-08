@@ -50,6 +50,10 @@ so that it can be used anywhere that a stream-oriented network connection
 */
 type UDTSocket struct {
 	// this data not changed after the socket is initialized and/or handshaked
+
+	rttProt         sync.RWMutex // lock must be held before referencing rtt/rttVar
+	receiveRateProt sync.RWMutex // lock must be held before referencing deliveryRate/bandwidth
+
 	m *multiplexer // the multiplexer that handles this socket
 	//raddr       *net.UDPAddr    // the remote address
 	created     time.Time       // the time that this socket was created
@@ -71,13 +75,11 @@ type UDTSocket struct {
 	writeDeadline       *time.Timer // if set, then calls to Write() will return "timeout" after this time
 	writeDeadlinePassed bool        // if set, then calls to Write() will return "timeout"
 
-	rttProt sync.RWMutex // lock must be held before referencing rtt/rttVar
-	rtt     uint         // receiver: estimated roundtrip time. (in microseconds)
-	rttVar  uint         // receiver: roundtrip variance. (in microseconds)
+	rtt    uint // receiver: estimated roundtrip time. (in microseconds)
+	rttVar uint // receiver: roundtrip variance. (in microseconds)
 
-	receiveRateProt sync.RWMutex // lock must be held before referencing deliveryRate/bandwidth
-	deliveryRate    uint         // delivery rate reported from peer (packets/sec)
-	bandwidth       uint         // bandwidth reported from peer (packets/sec)
+	deliveryRate uint // delivery rate reported from peer (packets/sec)
+	bandwidth    uint // bandwidth reported from peer (packets/sec)
 
 	// channels
 	messageIn       chan []byte          // inbound messages. Sender is goReceiveEvent->ingestData, Receiver is client caller (Read)

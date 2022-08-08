@@ -83,12 +83,16 @@ func (backend *Backend) SelfUserAgent() string {
 
 // PeerInfo stores information about a single remote peer
 type PeerInfo struct {
+	// statistics
+	StatsPacketSent     uint64 // Count of packets sent
+	StatsPacketReceived uint64 // Count of packets received
+	sync.RWMutex               // Mutex for access to list of connections.
+
 	PublicKey             *btcec.PublicKey // Public key
 	NodeID                []byte           // Node ID in Kademlia network = blake3(Public Key).
 	connectionActive      []*Connection    // List of active established connections to the peer.
 	connectionInactive    []*Connection    // List of former connections that are no longer valid. They may be removed after a while.
 	connectionLatest      *Connection      // Latest valid connection.
-	sync.RWMutex                           // Mutex for access to list of connections.
 	messageSequence       uint32           // Sequence number. Increased with every message.
 	IsRootPeer            bool             // Whether the peer is a trusted root peer.
 	UserAgent             string           // User Agent reported by remote peer. Empty if no Announcement/Response message was yet received.
@@ -99,10 +103,6 @@ type PeerInfo struct {
 	BlockchainHeight      uint64           // Blockchain height
 	BlockchainVersion     uint64           // Blockchain version
 	blockchainLastRefresh time.Time        // Last refresh of the blockchain info.
-
-	// statistics
-	StatsPacketSent     uint64 // Count of packets sent
-	StatsPacketReceived uint64 // Count of packets received
 
 	Backend *Backend
 }

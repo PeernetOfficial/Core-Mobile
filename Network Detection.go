@@ -7,14 +7,17 @@ Author:     Peter Kleissner
 package core
 
 import (
+	"fmt"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/PeernetOfficial/core/android"
 )
 
 // FindInterfaceByIP finds an interface based on the IP. The IP must be available at the interface.
 func FindInterfaceByIP(ip net.IP) (iface *net.Interface, ipnet *net.IPNet) {
-	interfaceList, err := net.Interfaces()
+	interfaceList, err := android.Interfaces()
 	if err != nil {
 		return nil, nil
 	}
@@ -42,7 +45,7 @@ func FindInterfaceByIP(ip net.IP) (iface *net.Interface, ipnet *net.IPNet) {
 // NetworkListIPs returns a list of all IPs
 func NetworkListIPs() (IPs []net.IP, err error) {
 
-	interfaceList, err := net.Interfaces()
+	interfaceList, err := android.Interfaces()
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +105,11 @@ func (nets *Networks) networkChangeMonitor() {
 	for {
 		time.Sleep(time.Second * changeMonitorFrequency)
 
-		interfaceList, err := net.Interfaces()
+		interfaceList, err := android.Interfaces()
+		// For testing purposes
+		for _, n := range interfaceList {
+			fmt.Println(n.Name)
+		}
 		if err != nil {
 			nets.backend.LogError("networkChangeMonitor", "enumerating network adapters failed: %s\n", err.Error())
 			continue

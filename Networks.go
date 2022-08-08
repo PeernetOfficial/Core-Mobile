@@ -15,11 +15,11 @@ import (
 
 // Networks is the collection of all connected networks
 type Networks struct {
-	// networks is a list of all connected networks
-	networks4, networks6 []*Network
-
 	// Mutex for both network lists. Higher granularity currently not needed.
 	sync.RWMutex
+
+	// networks is a list of all connected networks
+	networks4, networks6 []*Network
 
 	// countListenX is the number of networks listened to, excluding link-local only listeners. This number might be different than len(networksN).
 	// This is useful to determine if there are any IPv4 or IPv6 listeners for potential external connections. This can be used to determine IPv4_LISTEN and IPv6_LISTEN.

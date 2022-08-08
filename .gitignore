@@ -4,3 +4,7 @@ log.txt
 test.*
 # Ignore the IDE gitignore files
 .idea/
+
+# Mobile files to ignore 
+*.arr 
+*.jar 

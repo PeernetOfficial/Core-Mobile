@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/PeernetOfficial/core/android"
+
 	"github.com/PeernetOfficial/core/btcec"
 	"github.com/PeernetOfficial/core/protocol"
 	"github.com/PeernetOfficial/core/reuseport"
@@ -123,7 +125,7 @@ func networkToIPv4BroadcastIPs(ipnet *net.IPNet) (broadcastIPs []net.IP) {
 			broadcastIPs = append(broadcastIPs, ip2)
 		}
 	} else {
-		interfaceList, err := net.Interfaces()
+		interfaceList, err := android.Interfaces()
 		if err != nil {
 			return
 		}

@@ -11,12 +11,15 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"net"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/PeernetOfficial/core/android"
 
 	"github.com/PeernetOfficial/core/btcec"
 )
@@ -83,22 +86,28 @@ func (backend *Backend) initNetwork() {
 	// * Packet duplicates on IPv6 Multicast (listening on multiple IPs and joining the group on the same adapter) and IPv4 Broadcast (listening on multiple IPs on the same adapter).
 	// * Local peers are more likely to connect on the same adapter via multiple IPs (i.e. link-local and others, including public IPv6 and temporary public IPv6).
 	// * Network adapters and IPs might change. Simplest case is if someone changes Wifi network.
-	interfaceList, err := net.Interfaces()
+	interfaceList, err := android.Interfaces()
 	if err != nil {
 		backend.LogError("initNetwork", "enumerating network adapters failed: %s\n", err.Error())
 		return
 	}
 
-	for _, iface := range interfaceList {
-		addresses, err := iface.Addrs()
-		if err != nil {
-			backend.LogError("initNetwork", "enumerating IPs for network adapter '%s': %s\n", iface.Name, err.Error())
-			continue
+	for i, iface := range interfaceList {
+		if i == 1 {
+			addresses := android.GetAndroidAddrs()
+			fmt.Println(len(addresses))
+			for _, address := range addresses {
+				fmt.Println(address.String())
+			}
+			if err != nil {
+				backend.LogError("initNetwork", "enumerating IPs for network adapter '%s': %s\n", iface.Name, err.Error())
+				continue
+			}
+
+			backend.networks.ipListen.ifacesExist[iface.Name] = addresses
+
+			backend.networks.InterfaceStart(iface, addresses)
 		}
-
-		backend.networks.ipListen.ifacesExist[iface.Name] = addresses
-
-		backend.networks.InterfaceStart(iface, addresses)
 	}
 }
 
@@ -106,7 +115,7 @@ func (backend *Backend) initNetwork() {
 func (nets *Networks) InterfaceStart(iface net.Interface, addresses []net.Addr) (networksNew []*Network) {
 	for _, address := range addresses {
 		net1 := address.(*net.IPNet)
-
+		fmt.Println("before loop back")
 		// Do not listen on lookpback IPs. They are not even needed for discovery of machine-local peers (they will be discovered via regular multicast/broadcast).
 		if net1.IP.IsLoopback() {
 			continue
@@ -115,6 +124,7 @@ func (nets *Networks) InterfaceStart(iface net.Interface, addresses []net.Addr) 
 		networkNew, err := nets.PrepareListen(net1.IP.String(), 0)
 
 		if err != nil {
+			fmt.Println(err)
 			// Do not log common errors:
 			// * "listen udp4 169.254.X.X:X: bind: The requested address is not valid in its context."
 			// Windows reports link-local addresses for inactive network adapters.
@@ -125,7 +135,7 @@ func (nets *Networks) InterfaceStart(iface net.Interface, addresses []net.Addr) 
 			nets.backend.LogError("networks.InterfaceStart", "listening on network adapter '%s' IPv4 '%s': %s\n", iface.Name, net1.IP.String(), err.Error())
 			continue
 		}
-
+		fmt.Println(networkNew.address.String())
 		nets.ipListen.Add(networkNew.address)
 
 		nets.backend.LogError("networks.InterfaceStart", "listen on network '%s' UDP %s\n", iface.Name, networkNew.address.String())
@@ -147,12 +157,12 @@ func (nets *Networks) PrepareListen(ipA string, port int) (network *Network, err
 	network.terminateSignal = make(chan interface{})
 
 	// get the network interface that belongs to the IP
-	if !ip.IsUnspecified() { // checks for IPv4 "0.0.0.0" and IPv6 "::"
-		network.iface, network.ipnet = FindInterfaceByIP(ip)
-		if network.iface == nil {
-			return nil, errors.New("error finding the network interface belonging to IP")
-		}
-	}
+	//if !ip.IsUnspecified() { // checks for IPv4 "0.0.0.0" and IPv6 "::"
+	//	network.iface, network.ipnet = FindInterfaceByIP(ip)
+	//	if network.iface == nil {
+	//		return nil, errors.New("error finding the network interface belonging to IP")
+	//	}
+	//}
 
 	// open up the port
 	if err = network.AutoAssignPort(ip, port); err != nil {
@@ -179,8 +189,8 @@ func (nets *Networks) PrepareListen(ipA string, port int) (network *Network, err
 
 // ipList keeps track of listened IP addresses and observed interfaces
 type ipList struct {
-	ipListen     map[string]struct{}   // list of IPs currently listening on
 	sync.RWMutex                       // Mutex for list
+	ipListen     map[string]struct{}   // list of IPs currently listening on
 	ifacesExist  map[string][]net.Addr // list of currently known interfaces with list of IP addresses
 }
 

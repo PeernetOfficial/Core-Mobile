@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/PeernetOfficial/core/android"
+
 	"github.com/PeernetOfficial/core/btcec"
 	"github.com/PeernetOfficial/core/protocol"
 	"github.com/PeernetOfficial/core/reuseport"
@@ -83,7 +85,7 @@ func (network *Network) MulticastIPv6Join() (err error) {
 			return err
 		}
 	} else {
-		interfaceList, err := net.Interfaces()
+		interfaceList, err := android.Interfaces()
 		if err != nil {
 			return err
 		}

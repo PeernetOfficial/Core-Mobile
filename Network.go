@@ -20,6 +20,7 @@ import (
 // Network is a connection adapter through one network interface (adapter).
 // Note that for each IP on the same adapter separate network entries are created.
 type Network struct {
+	sync.RWMutex                     // for sychronized closing
 	iface           *net.Interface   // Network interface belonging to the IP. May not be set.
 	ipnet           *net.IPNet       // IP network the listening address belongs to. May not be set.
 	address         *net.UDPAddr     // IP:Port where the server listens
@@ -33,7 +34,6 @@ type Network struct {
 	nat             upnp.NAT         // UPnP: NAT information
 	isTerminated    bool             // If true, the network was signaled for termination
 	terminateSignal chan interface{} // gets closed on termination signal, can be used in select via "case _ = <- network.terminateSignal:"
-	sync.RWMutex                     // for sychronized closing
 	networkGroup    *Networks        // Pointer to the pool of networks that this is part of
 	backend         *Backend
 }
@@ -168,7 +168,7 @@ func (nets *Networks) packetWorker() {
 			connection = peer.registerConnection(connection)
 		}
 
-		atomic.AddUint64(&peer.StatsPacketReceived, 1)
+		//atomic.AddUint64(&peer.StatsPacketReceived, 1)
 		connection.LastPacketIn = time.Now()
 
 		// process the packet

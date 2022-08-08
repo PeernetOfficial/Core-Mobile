@@ -120,13 +120,14 @@ func decodeBlockchainHeader(publicKey *btcec.PublicKey, buffer []byte) (header *
 
 // Reads a blockchains header if available.
 func (multi *MultiStore) ReadBlockchainHeader(publicKey *btcec.PublicKey) (header *MultiBlockchainHeader, found bool, err error) {
-	buffer, found := multi.Database.Get(publicKey.SerializeCompressed())
-	if !found {
-		return nil, false, nil
-	}
-
-	header, err = decodeBlockchainHeader(publicKey, buffer)
-	return header, err == nil, err
+	//buffer, found := multi.Database.Get(publicKey.SerializeCompressed())
+	//if !found {
+	//	return nil, false, nil
+	//}
+	//
+	//header, err = decodeBlockchainHeader(publicKey, buffer)
+	//return header, err == nil, err
+	return header, false, err
 }
 
 // WriteBlockchainHeader writes a blockchain header. If one exists, it will be overwritten.
@@ -148,7 +149,8 @@ func (multi *MultiStore) WriteBlockchainHeader(header *MultiBlockchainHeader) (e
 		index += 8
 	}
 
-	return multi.Database.Set(header.PublicKey.SerializeCompressed(), raw)
+	//return multi.Database.Set(header.PublicKey.SerializeCompressed(), raw)
+	return nil
 }
 
 func lookupKeyForBlock(publicKey *btcec.PublicKey, version, blockNumber uint64) (key []byte) {
@@ -164,12 +166,14 @@ func lookupKeyForBlock(publicKey *btcec.PublicKey, version, blockNumber uint64) 
 
 // ReadBlock reads a raw block
 func (multi *MultiStore) ReadBlock(publicKey *btcec.PublicKey, version, blockNumber uint64) (raw []byte, found bool) {
-	return multi.Database.Get(lookupKeyForBlock(publicKey, version, blockNumber))
+	//return multi.Database.Get(lookupKeyForBlock(publicKey, version, blockNumber))
+	return nil, false
 }
 
 // WriteBlock writes a raw block. It does not update the blockchain header.
 func (multi *MultiStore) WriteBlock(publicKey *btcec.PublicKey, version, blockNumber uint64, raw []byte) (err error) {
-	return multi.Database.Set(lookupKeyForBlock(publicKey, version, blockNumber), raw)
+	//return multi.Database.Set(lookupKeyForBlock(publicKey, version, blockNumber), raw)
+	return nil
 }
 
 // AssessBlockchainHeader reads the blockchain header, if available, and assesses the status.
@@ -231,21 +235,21 @@ func (multi *MultiStore) NewBlockchainHeader(publicKey *btcec.PublicKey, version
 // It does not write the blockchain header; multi.WriteBlockchainHeader must called to store the changes.
 // The caller must make sure not to call this function on records already processed.
 func (multi *MultiStore) UpdateBlockchainStatistics(header *MultiBlockchainHeader, recordsDecoded []interface{}) {
-	updatedStats := false
-	statsOld := header.Stats
+	//updatedStats := false
+	//statsOld := header.Stats
 
 	for _, decodedR := range recordsDecoded {
 		if file, ok := decodedR.(BlockRecordFile); ok {
 			header.Stats.SizeAllFiles += file.Size
 			header.Stats.CountFileRecords++
 
-			updatedStats = true
+			//updatedStats = true
 		}
 	}
 
-	if updatedStats && multi.FilterStatisticUpdate != nil {
-		multi.FilterStatisticUpdate(multi, header, statsOld)
-	}
+	//if updatedStats && multi.FilterStatisticUpdate != nil {
+	//	multi.FilterStatisticUpdate(multi, header, statsOld)
+	//}
 }
 
 // Iterates over all blockchains stored in the cache
