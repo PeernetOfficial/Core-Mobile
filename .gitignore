@@ -6,5 +6,5 @@ test.*
 .idea/
 
 # Mobile files to ignore 
-*.arr 
+*.aar 
 *.jar 
